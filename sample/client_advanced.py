@@ -25,6 +25,9 @@ import time
 import mqbeebotte
 
 #=========================================================================
+# This sample comes with config.py.
+# Please modify config.py before executing this sample.
+#=========================================================================
 def on_connect(client, userdata, flags, respons_code):
     print('Connected to Beebotte')
     return
@@ -38,22 +41,18 @@ def on_message(client, userdata, msg):
 # Before execute any MQTT client code, you need to create a channel and resource
 # on Beebotte.
 
-# Topic name must be 'channel/resource'.
-# In this example, you need to create a channel named 'test' that includes
-# a resource named 'res'.
-# I've tested several codes and found that wildcard such as 'channel/resource/#'
-# seems to work properly.
-topic = 'test/res'
-
-# Copy and paste your channel token.
-# I recommend to use a separate config file to keep this value.
-##### THIS IS A SECRET KEY.  DO NOT COMMIT THIS VALUE TO YOUR REPOSITORY #####
-channel_token = 'channel_token_here' 
+# Load config file.
+import config
 
 # Create an client instance.
-client = mqbeebotte.client()
+try:
+    ca_cert = config.ca_cert
+except AttributeError:
+    ca_cert = None
+client = mqbeebotte.client(ca_cert=ca_cert)
+
 # And connect to Beebotte.
-client.connect(channel_token, on_connect=on_connect, on_message=on_message)
+client.connect(config.channel_token, on_connect=on_connect, on_message=on_message)
 # Start network loop thread.
 # Thread is running in a non-blocking manner.
 client.start()
@@ -62,17 +61,26 @@ client.start()
 # You can do anything after this including executing subscribe and publish.
 #--------------------------------------------------------------------------
 
-# Subscribe to a topic with wildcard, i.e, topic 'test/res/#'.
-print('Subscribe to {}'.format(topic + '/#'))
-client.subscribe(topic + '/#')
+# Subscribe to mutiple topics.
+# Generate target topic names.
+topics = [
+    '1',
+    '2',
+    '3',
+    '4',
+]
+sub_topics = list(map(lambda x: config.topic_base + '/' + x, topics))
+print('Subscribe to {}'.format(', '.join(sub_topics)))
+# Give a list to subscribe() to subscribe to multiple topics.
+client.subscribe(sub_topics)
 
-for cnt in range(3):
+for cnt in range(1,4):
     # I usually hook Ctrl-C to close connection properly.
     try:
         time.sleep(5)
-        # Publish a message to a topic 'test/res/1'
-        print('Publish a message to ' + topic + '/1')
-        client.publish(topic + '/1', 'test count {:d}'.format(cnt))
+        # Publish a message to a topic 'test/res/cnt'
+        print('Publish a message to {}/{:d}'.format(config.topic_base, cnt))
+        client.publish('{}/{:d}'.format(config.topic_base, cnt), 'test count {:d}'.format(cnt))
     except KeyboardInterrupt:
         print('Stop requested.')
         break
@@ -82,9 +90,8 @@ time.sleep(5)
 
 # Stop network loop thread.
 # When block_wait is set to True, stop() blocks until the thread stops.
-# Default block_wait is set to False.
-# In a non-blocking manner, you need to wait until the thead stops
-# using client.join().
+# Default block_wait is False.  In a non-blocking manner, you need to
+# wait until the thead stops using client.join().
 client.stop(block_wait=True)
 
 # Disconnect and removes the client instance.
