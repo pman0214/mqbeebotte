@@ -26,4 +26,4 @@ Copyright, License
 
 Copyright (c) 2020, Shigemi ISHIDA
 
-This software is released under the BSD 3-clause license. See ``LICENSE.txt``.
+This package is released under the BSD 3-clause license. See ``LICENSE.txt``.
