@@ -32,9 +32,9 @@ import paho.mqtt.client as mqtt
 from logging import getLogger, NullHandler
 
 #======================================================================
-class MqBeebotte(threading.Thread):
+class client(threading.Thread):
     """
-    Beebotte MQTT API class
+    Beebotte MQTT client API class
 
     Attributes
     ----------

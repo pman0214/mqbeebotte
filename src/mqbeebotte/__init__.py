@@ -4,7 +4,7 @@ MqBeebotte
 ==========
 
 Provides
-    Beebotte MQTT access functions.
+    Beebotte MQTT access module.
 """
 
 # Copyright (c) 2020, Shigemi ISHIDA
@@ -34,4 +34,4 @@ Provides
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-from mqbeebotte.core import *
+from mqbeebotte.client import *
