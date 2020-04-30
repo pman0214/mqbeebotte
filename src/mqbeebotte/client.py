@@ -389,6 +389,11 @@ class client(threading.Thread):
         block_wait : bool
             A flag to indicate to wait for the thread to be stopped.
         """
+
+        # do nothing if the thread is not running
+        if not self._is_running:
+            return
+
         self.logger.debug('stop')
         self._is_running = False
         if block_wait:
