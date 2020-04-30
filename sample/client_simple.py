@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+This is a simple client sample.
+Change channel_token in this file to access Beebotte.
+"""
+
 #
 # Copyright (c) 2020, Shigemi ISHIDA
 #

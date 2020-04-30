@@ -1,4 +1,18 @@
 # -*- coding: utf-8 -*-
+"""
+This sample is designed for client module debugging.
+
+Prepare for Beebotte access information in the config file 'config.py'
+including:
+    channel_token : str
+        Channel token.
+    ca_cert : str
+        Path to a SSL server certificate.
+    topic_base : str
+        Topic name, i.e., 'channel/resource'.
+        None to use non-SSL connection.
+"""
+
 #
 # Copyright (c) 2020, Shigemi ISHIDA
 #
