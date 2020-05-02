@@ -346,12 +346,12 @@ class client(threading.Thread):
 
         Parameters
         ----------
-        topics : str
-            A name of publish target topic.
+        topic : str
+            The name of publish target topic.
         msg : str or byte
             A message to be published.
         qos : int, default 0
-            The integer of 0, 1, or 2 to specify Quality of Service for publish.
+            An integer of 0, 1, or 2 to specify Quality of Service for publish.
         retain : bool
             A flag to indicate that the message will be retained.
 
