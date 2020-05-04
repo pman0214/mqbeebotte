@@ -15,7 +15,7 @@ with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='mqbeebotte',
-    version='0.0.2',
+    version='0.0.4',
     description='Unofficial Beebotte MQTT access package',
     long_description=long_description,
     long_description_content_type='text/x-rst',

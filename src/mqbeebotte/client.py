@@ -38,13 +38,13 @@ class client(threading.Thread):
     Attributes
     ----------
     logger : logging.Logger
-        Logger object.  Default handler is NullHandler().
+        Logger object class attribute.  Default handler is NullHandler().
     HOST : str
-        Default host name, i.e., mqtt.beebotte.com.
+        Default host name class attribute, i.e., mqtt.beebotte.com.
     PORT : int
-        Default port number, i.e., 1883.
+        Default port number class attribute, i.e., 1883.
     PORT_SSL : int
-        Default port number, i.e., 8883, for SSL connection.
+        Default port number class attribute, i.e., 8883, for SSL connection.
     host : str
         MQTT server name to connect.
     port : int
@@ -56,6 +56,7 @@ class client(threading.Thread):
     """
 
     logger = getLogger(__name__)
+    logger.addHandler(NullHandler())
     HOST = 'mqtt.beebotte.com'
     PORT = 1883
     PORT_SSL = 8883
@@ -81,17 +82,15 @@ class client(threading.Thread):
 
         super().__init__()
 
-        self.host = host if host is not None else self.HOST
+        self.host = host if host is not None else client.HOST
         self.ca_cert = ca_cert
         if port is not None:
             self.port = port
         else:
-            self.port = self.PORT if self.ca_cert is None else self.PORT_SSL
+            self.port = client.PORT if self.ca_cert is None else client.PORT_SSL
         #
         if logger is not None:
-            self.logger = logger
-        else:
-            self.logger.addHandler(NullHandler())
+            client.logger = logger
 
         self.topics = []
 
@@ -113,13 +112,13 @@ class client(threading.Thread):
 
     #----------------------------------------------------------------------
     def __on_connect(self, client, userdata, flags, respons_code):
-        self.logger.debug('connected to {}'.format(self.host))
+        client.logger.debug('connected to {}'.format(self.host))
         return
    
     #----------------------------------------------------------------------
     def __on_message(self, client, userdata, msg):
-        self.logger.debug('{} {}'.format(msg.topic, str(msg.payload)))
-        self.logger.debug(msg.payload.decode("utf-8"))
+        client.logger.debug('{} {}'.format(msg.topic, str(msg.payload)))
+        client.logger.debug(msg.payload.decode("utf-8"))
         return
 
     #----------------------------------------------------------------------
@@ -130,9 +129,9 @@ class client(threading.Thread):
                 if pub.is_published():
                     remove_targets.append(mid)
 
-        for mid in remove_targets:
-            self.logger.debug('remove mid={:d}'.format(mid))
-            with self._pubs_lock:
+        with self._pubs_lock:
+            for mid in remove_targets:
+                client.logger.debug('remove mid={:d}'.format(mid))
                 del self._pubs[mid]
 
         return
@@ -142,12 +141,12 @@ class client(threading.Thread):
         for topic in topics:
             # check if topic is subscribed
             if topic in self.topics:
-                self.logger.debug('unsubscribe from {}'.format(topic))
+                client.logger.debug('unsubscribe from {}'.format(topic))
                 self._client.unsubscribe(topic)
                 self.topics.remove(topic)
-                self.logger.debug('unsubscribed from {}'.format(topic))
+                client.logger.debug('unsubscribed from {}'.format(topic))
             else:
-                self.logger.debug('not subscribed to {}'.format(topic))
+                client.logger.debug('not subscribed to {}'.format(topic))
 
         return True
 
@@ -164,17 +163,17 @@ class client(threading.Thread):
         # check if topics are already subscribed
         if len(set(topics) & set(self.topics)) != 0:
             subed_topics = set(topics) & set(self.topics)
-            self.logger.error('topics are already subscribed: {}'.format(', '.join(list(subed_topics))))
+            client.logger.error('topics are already subscribed: {}'.format(', '.join(list(subed_topics))))
             return False
 
-        self.logger.debug('subscribe topics {}'.format(', '.join(topics)))
+        client.logger.debug('subscribe topics {}'.format(', '.join(topics)))
         result, mid = self._client.subscribe(topic_qos)
         if result is not mqtt.MQTT_ERR_SUCCESS:
-            self.logger.error('subscribe error')
+            client.logger.error('subscribe error')
             return False
 
         self.topics.extend(topics)
-        self.logger.debug('subscribed topics {}'.format(', '.join(topics)))
+        client.logger.debug('subscribed topics {}'.format(', '.join(topics)))
 
         return True
 
@@ -204,7 +203,7 @@ class client(threading.Thread):
             True on success, False when any error occurs.
         """
         if self._client is not None:
-            self.logger.debug('already connected to {}' + self.host)
+            client.logger.debug('already connected to {}' + self.host)
             return False
 
         self._client = mqtt.Client()
@@ -212,12 +211,12 @@ class client(threading.Thread):
         self._client.on_message = on_message if on_message is not None else self.__on_message
         self._client.username_pw_set('token:{}'.format(token))
         if self.ca_cert is not None:
-            self.logger.debug('use ca_cert: {}'.format(self.ca_cert))
+            client.logger.debug('use ca_cert: {}'.format(self.ca_cert))
             self._client.tls_set(self.ca_cert)
 
-        self.logger.debug('connecting to {}:{:d}'.format(self.host, self.port))
+        client.logger.debug('connecting to {}:{:d}'.format(self.host, self.port))
         self._client.connect(self.host, self.port)
-        self.logger.debug('connected to ' + self.host)
+        client.logger.debug('connected to ' + self.host)
 
         return True
 
@@ -237,15 +236,15 @@ class client(threading.Thread):
         self._client.loop_start()
 
         # unsubscribe from all topics
-        self.logger.debug('unsubscribe all topics')
+        client.logger.debug('unsubscribe all topics')
         self.unsubscribe(None)
 
         # wait for all publish requests to be published
-        self.logger.debug('wait for all topics to be published')
+        client.logger.debug('wait for all topics to be published')
         with self._pubs_lock:
             while len(self._pubs) > 0:
                 mid, pub = self._pubs.popitem()
-                self.logger.debug('wait for mid={:d}'.format(mid))
+                client.logger.debug('wait for mid={:d}'.format(mid))
                 pub.wait_for_publish()
 
         self._client.loop_stop()
@@ -271,26 +270,26 @@ class client(threading.Thread):
             True on success, False when any error occurs.
         """
         if self._client is None:
-            self.logger.error('cannot unsubscribe: not connected')
+            client.logger.error('cannot unsubscribe: not connected')
             return False
 
         if topics is None:
-            self.logger.debug('unsubscribe from all: {}'.format(', '.join(self.topics)))
+            client.logger.debug('unsubscribe from all: {}'.format(', '.join(self.topics)))
             self._client.unsubscribe(self.topics)
             self.topics = []
-            self.logger.debug('unsubscribed all')
+            client.logger.debug('unsubscribed all')
             return True
 
         if type(topics) is list:
             return self.__unsubscribe_multiple(topics)
 
         if topics in self.topics:
-            self.logger.debug('unsubscribe from {}'.format(topics))
+            client.logger.debug('unsubscribe from {}'.format(topics))
             self._client.unsubscribe(topics)
             self.topics.remove(topics)
-            self.logger.debug('unsubscribed from {}'.format(topics))
+            client.logger.debug('unsubscribed from {}'.format(topics))
         else:
-            self.logger.debug('not subscribed to {}'.format(topics))
+            client.logger.debug('not subscribed to {}'.format(topics))
 
         return True
 
@@ -314,28 +313,28 @@ class client(threading.Thread):
             True on success, False when any error occurs.
         """
         if self._client is None:
-            self.logger.error('cannot subscribe: not connected')
+            client.logger.error('cannot subscribe: not connected')
             return False
 
         if type(topics) is list:
             return self.__subscribe_multiple(topics)
 
         if topics in self.topics:
-            self.logger.warning('already subscribed to {}'.format(topics))
+            client.logger.warning('already subscribed to {}'.format(topics))
             return True
 
         if type(topics) is not str:
-            self.logger.error('invalid variable for topic name')
+            client.logger.error('invalid variable for topic name')
             return False
 
-        self.logger.debug('subscribe to {}'.format(topics))
+        client.logger.debug('subscribe to {}'.format(topics))
         result, mid = self._client.subscribe(topics, qos)
         if result is not mqtt.MQTT_ERR_SUCCESS:
-            self.logger.error('subscribe error')
+            client.logger.error('subscribe error')
             return False
 
         self.topics.append(topics)
-        self.logger.debug('subscribed to {}, mid={:d}'.format(topics, mid))
+        client.logger.debug('subscribed to {}, mid={:d}'.format(topics, mid))
 
         return True
 
@@ -361,14 +360,14 @@ class client(threading.Thread):
             True on success, False when any error occurs.
         """
         if self._client is None:
-            self.logger.error('cannot publish: not connected')
+            client.logger.error('cannot publish: not connected')
             return False
 
-        self.logger.debug('publish {}'.format(topic))
+        client.logger.debug('publish {}'.format(topic))
         pub = self._client.publish(topic, msg, qos, retain)
         with self._pubs_lock:
             self._pubs[pub.mid] = pub
-        self.logger.debug('published {}'.format(topic))
+        client.logger.debug('published {}'.format(topic))
 
         return True
 
@@ -394,7 +393,7 @@ class client(threading.Thread):
         if not self._is_running:
             return
 
-        self.logger.debug('stop')
+        client.logger.debug('stop')
         self._is_running = False
         if block_wait:
             self.join()
