@@ -411,8 +411,6 @@ class client(threading.Thread):
             self._client.loop()
             self.__check_published()
 
-        self.disconnect()
-
         return True
 
 #======================================================================
